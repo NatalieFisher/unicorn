@@ -1,0 +1,269 @@
+/*------------------------------------------------------------------
+
+    #Flexbox Grid System
+
+    Learn how to use this in your HTML: http://flexboxgrid.com/
+
+-------------------------------------------------------------------*/
+
+* {
+    @include box-sizing(border-box);
+}
+
+// Flexbox Variables
+$column-count: 12 !default;
+$column-selector: '.col' !default;
+$offset-modifier: 'offset' !default;
+$container-max-width: 990px;
+
+$gutter-width: 30px !default;
+$outer-margin: 15px !default;
+$gutter-compensation: (($gutter-width / 2) * -1) !default;
+$half-gutter-width: ($gutter-width / 2) !default;
+
+$width-xs: 500px !default;
+$width-sm: 650px !default;
+$width-md: 760px !default;
+$width-lg: 960px !default;
+
+$viewport-xs: $width-xs !default;
+$viewport-sm: $width-sm !default;
+$viewport-md: $width-md !default;
+$viewport-lg: $width-lg !default;
+
+$xs: 'xs' !default;
+$sm: 'sm' !default;
+$md: 'md' !default;
+$lg: 'lg' !default;
+
+$block-delimiter: '-' !default;
+$element-delimiter: '-' !default;
+$modifier-delimiter: '-' !default;
+
+$default-query: $viewport-xs !default;
+$queries: (
+  $xs: $viewport-xs,
+  $sm: $viewport-sm,
+  $md: $viewport-md,
+  $lg: $viewport-lg
+) !default;
+
+$column-properties: '-webkit-flex-basis', 'flex-basis', 'max-width' !default;
+$offset-properties: 'margin-left' !default;
+
+
+
+
+
+// Flexbox Mixins
+@mixin autoWidth() {
+  -webkit-flex-grow: 1;
+  flex-grow: 1;
+  -webkit-flex-basis: 0;
+  flex-basis: 0;
+  max-width: 100%;
+}
+
+@mixin percentWidth($property, $columns, $count) {
+  #{$property}: ((100% / $columns) * $count);
+}
+
+@mixin percentOffset($property, $columns, $count) {
+  $single-column-width: ((100% / $columns) * 1);
+  #{$property}: $single-column-width * $count;
+}
+
+@mixin queries($key, $queries) {
+  $query: map-get($queries, $key);
+  @if ($query == $default-query) {
+    @content;
+  } @else {
+    @media screen and (min-width: $query) {
+      @content;
+    }
+  }
+}
+
+@mixin columns($selector: $column-selector, $properties: $column-properties, $columns: $column-count, $queries: $queries) {
+  @for $i from 0 through $columns {
+    @each $name, $size in $queries {
+      @if ($i == 0) {
+        #{$selector + $block-delimiter + $name} {
+          @content;
+        }
+      } @else {
+        #{$selector + $block-delimiter + $name + $modifier-delimiter + $i} {
+          @content;
+        }
+      }
+    }
+  }
+
+  @each $name, $size in $queries {
+    @include queries($name, $queries) {
+      @for $i from 0 through $columns {
+        @if ($i == 0) {
+          #{$selector + $block-delimiter + $name} {
+            @include autoWidth();
+          }
+        } @else {
+          #{$selector + $block-delimiter + $name + $modifier-delimiter + $i} {
+            @each $prop in $properties {
+              @include percentWidth($prop, $columns, $i);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@mixin offsets($selector: $column-selector, $modifier-selector: $offset-modifier, $properties: $offset-properties, $columns: $column-count, $queries: $queries) {
+  @each $name, $size in $queries {
+    @for $i from 1 through $columns {
+      #{$selector + $block-delimiter + $name + $modifier-delimiter + $modifier-selector + $modifier-delimiter + $i} {
+        @content;
+      }
+    }
+  }
+
+  @each $name, $size in $queries {
+    @for $i from 1 through $columns {
+      #{$selector + $block-delimiter + $name + $modifier-delimiter + $modifier-selector + $modifier-delimiter + $i} {
+        @include queries($name, $queries) {
+          @each $prop in $properties {
+            @include percentOffset($prop, $columns, $i);
+          }
+        }
+      }
+    }
+  }
+}
+
+@mixin breakpoints($selector, $queries: $queries) {
+  @each $name, $size in $queries {
+    #{$selector + $modifier-delimiter + $name} {
+      @include queries($name, $queries) {
+        @content;
+      }
+    }
+  }
+}
+
+@mixin container-fluid() {
+  box-sizing: border-box;
+  margin-right: auto;
+  margin-left: auto;
+  padding-right: $outer-margin;
+  padding-left: $outer-margin;
+}
+
+@mixin row() {
+  box-sizing: border-box;
+  display:-webkit-box;
+  display:-webkit-flex;
+  display:-ms-flexbox;
+  display:flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  margin-right: $gutter-compensation;
+  margin-left: $gutter-compensation;
+}
+
+@mixin column() {
+  box-sizing: border-box;
+  -webkit-flex-grow: 0;
+  flex-grow: 0;
+  -webkit-flex-shrink: 0;
+  flex-shrink: 0;
+  padding-right: $half-gutter-width;
+  padding-left: $half-gutter-width;
+}
+
+
+
+
+// Flexbox Grid
+.container {
+  max-width: $container-max-width;
+  @include container-fluid();
+}
+
+.row {
+  @include row();
+}
+
+%column {
+  @include column();
+}
+
+@include columns() {
+  @extend %column;
+}
+
+@include offsets() {
+  @extend %column;
+}
+
+@include breakpoints('.center') {
+  -webkit-justify-content: center;
+  justify-content: center;
+}
+
+@include breakpoints('.start') {
+  -webkit-justify-content: flex-start;
+  justify-content: flex-start;
+}
+
+@include breakpoints('.end') {
+    -webkit-justify-content: flex-end;
+  justify-content: flex-end;
+}
+
+@include breakpoints('.top') {
+  -webkit-justify-content: flex-start;
+  align-items: flex-start;
+}
+
+@include breakpoints('.middle') {
+  -webkit-align-items:center;
+  align-items: center;
+}
+
+@include breakpoints('.bottom') {
+  -webkit-align-items: flex-end;
+  align-items: flex-end;
+}
+
+@include breakpoints('.around') {
+  -webkit-justify-content: space-around;
+  justify-content: space-around;
+}
+
+@include breakpoints('.between') {
+  -webkit-align-items: space-between;
+  justify-content: space-between;
+}
+
+@include breakpoints('.last') {
+  -webkit-order: 1;
+  order: 1;
+}
+
+@include breakpoints('.first') {
+  -webkit-order: -1;
+  order: -1;
+}
+
+@include breakpoints('.reverse') {
+  -webkit-flex-direction: row-reverse;
+  flex-direction: row-reverse;
+}
+
+.row.reverse {
+  -webkit-flex-direction: row-reverse;
+  -ms-flex-direction: row-reverse;
+  -webkit-box-orient: horizontal;
+  -webkit-box-direction: reverse;
+  flex-direction: row-reverse;
+}
